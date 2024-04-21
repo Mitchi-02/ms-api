@@ -1,0 +1,42 @@
+server:
+    port: 7777
+
+spring:
+    application:
+        name: ms-gateway
+    cloud:
+        openfeign:
+            client:
+                config:
+                    default:
+                        logger-level: FULL
+        gateway:
+            routes:
+                - id: route1
+                  predicates:
+                      - Path=/e-tourism/hotel/**
+                  filters:
+                      - RewritePath=/e-tourism/hotel/(?<s>.*), /${s}
+                      - name: CircuitBreaker
+                        args:
+                            name: FallBack
+                            fallback: forward:/default
+                  uri: lb://ms-hotel
+
+                - id: route2
+                  predicates:
+                      - Path=/e-tourism/reservation/**
+                  filters:
+                      - RewritePath=/e-tourism/reservation/(?<s>.*), /${s}
+                      - name: CircuitBreaker
+                        args:
+                          name: FallBack
+                          fallback: forward:/default
+                  uri: lb://ms-reservation
+
+eureka:
+    client:
+        register-with-eureka: true
+        fetch-registry: true
+        service-url:
+            defaultZone: http://localhost:8888/eureka
